@@ -7,6 +7,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from modules.legal_agent import build_legal_agent
 from modules.storage import StorageManager
+import uvicorn 
 
 app = FastAPI(title="MyLawyer AI - LangGraph Agent")
 app.add_middleware(
