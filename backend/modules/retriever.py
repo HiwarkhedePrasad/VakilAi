@@ -3,13 +3,14 @@ import hashlib
 from typing import List, Dict
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, VectorParams, Distance
-import requests
+import google.generativeai as genai
 
 class LegalRetriever:
     def __init__(self):
-        # Gemini API key and model
+        # Configure Gemini API
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
-        self.gemini_embed_url = "https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedText"
+        genai.configure(api_key=self.gemini_api_key)
+        self.model = "models/text-embedding-004"
         self.dim = 768  # Gemini embedding dimension
 
         # Initialize Qdrant (cloud or local)
@@ -34,22 +35,20 @@ class LegalRetriever:
             self._seed_legal_database()
 
     def _get_embedding(self, text: str):
-        """Fetch text embedding from Gemini API"""
+        """Fetch text embedding using google-generativeai"""
         try:
-            response = requests.post(
-                f"{self.gemini_embed_url}?key={self.gemini_api_key}",
-                json={"text": text},
-                timeout=10
+            result = genai.embed_content(
+                model=self.model,
+                content=text,
+                task_type="retrieval_document"
             )
-            response.raise_for_status()
-            data = response.json()
-            return data["embedding"]["values"]
+            return result["embedding"]
         except Exception as e:
             print(f"Embedding error: {e}")
             return [0.0] * self.dim  # fallback zero vector
 
     def _seed_legal_database(self):
-        """Seed with sample Indian legal acts (expandable)"""
+        """Seed with sample Indian legal acts"""
         legal_corpus = [
             {
                 "text": "Compensation for breach of contract: When a contract is broken, the party who suffers by such breach is entitled to receive compensation for any loss or damage caused.",
